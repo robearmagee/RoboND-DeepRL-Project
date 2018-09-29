@@ -137,6 +137,7 @@ void ArmPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
 	/ TODO - Subscribe to camera topic
 	/
 	*/
+	cameraSub = cameraNode->Subscribe("/gazebo/" WORLD_NAME "/camera/link/camera/image", &ArmPlugin::onCameraMsg, this);
 	
 	//cameraSub = None;
 
