@@ -171,7 +171,7 @@ bool ArmPlugin::createAgent()
 	/
 	*/
 	
-	agent = NULL;
+	agent = dqnAgent::Create(INPUT_WIDTH, INPUT_HEIGHT, INPUT_CHANNELS, DOF*2, OPTIMIZER, LEARNING_RATE, REPLAY_MEMORY, BATCH_SIZE, GAMMA, EPS_START, EPS_END, EPS_DECAY, USE_LSTM, LSTM_SIZE, ALLOW_RANDOM, DEBUG_DQN);
 
 	if( !agent )
 	{
@@ -267,18 +267,21 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
 		/
 		*/
 		
-		/*
-		
-		if (collisionCheck)
+		if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0))
 		{
-			rewardHistory = None;
+			rewardHistory = REWARD_WIN;
 
-			newReward  = None;
-			endEpisode = None;
+			newReward  = true;
+			endEpisode = true;
 
 			return;
 		}
-		*/
+		else{
+          //Giving penalty for non correct collisions
+          rewardHistory = REWARD_LOSS;
+          newReward = true;
+          endEpisode = true;
+        }
 		
 	}
 }
@@ -327,7 +330,7 @@ bool ArmPlugin::updateAgent()
 	/
 	*/
 	
-	float velocity = 0.0; // TODO - Set joint velocity based on whether action is even or odd.
+	float velocity = vel[action/2] + actionVelDelta * ((action % 2 ==0) ? 1.0f : -1.0f); // Set joint velocity based on whether action is even or odd.
 
 	if( velocity < VELOCITY_MIN )
 		velocity = VELOCITY_MIN;
@@ -358,7 +361,9 @@ bool ArmPlugin::updateAgent()
 	/ TODO - Increase or decrease the joint position based on whether the action is even or odd
 	/
 	*/
-	float joint = 0.0; // TODO - Set joint position based on whether action is even or odd.
+	const int jointIdx = action/2;
+
+	float joint = ref[jointIdx] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); // TODO - Set joint position based on whether action is even or odd.
 
 	// limit the joint to the specified range
 	if( joint < JOINT_MIN )
@@ -593,6 +598,13 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 			endEpisode    = None;
 		}
 		*/
+		if ( gripBBox.min.z <= groundContact || gripBBox.max.z <= groundContact )
+		{
+			printf("GROUND CONTACT, End of Episode\n");
+			rewardHistory = REWARD_LOSS;
+			newReward = true;
+			endEpisode = true;
+		}
 		
 		/*
 		/ TODO - Issue an interim reward based on the distance to the object
@@ -619,6 +631,26 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 
 			lastGoalDistance = distGoal;
 		} */
+		if( gripBBox.min.z > groundContact || gripBBox.max.z > groundContact )
+		{
+			const float distGoal = BoxDistance(gripBBox, propBBox); // compute the reward from distance to the goal
+
+			if(DEBUG){printf("distance('%s', '%s') = %f\n", gripper->GetName().c_str(), prop->model->GetName().c_str(), distGoal);}
+
+			
+			if( episodeFrames > 1 )
+			{
+				const float distDelta  = lastGoalDistance - distGoal;
+				const float movingAvg = 0.0f;
+              
+				// compute the smoothed moving average of the delta of the distance to the goal
+				avgGoalDelta  = (avgGoalDelta * movingAvg) + (distDelta * (1.0f - movingAvg));
+				rewardHistory = avgGoalDelta * REWARD_MULTIPLIER;
+				newReward     = true;	
+			}
+
+			lastGoalDistance = distGoal;
+		} 
 	}
 
 	// issue rewards and train DQN
