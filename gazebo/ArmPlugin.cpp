@@ -51,6 +51,7 @@
 
 #define REWARD_WIN  0.0f
 #define REWARD_LOSS -0.0f
+#define REWARD_	MULTIPLIER 10.0f
 
 // Define Object Names
 #define WORLD_NAME "arm_world"
