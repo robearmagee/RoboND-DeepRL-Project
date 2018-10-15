@@ -269,7 +269,7 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
 		/
 		*/
 		
-		if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0))
+		if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_POINT) == 0)) // changed collision_point from Collision_filter
 		{
 			rewardHistory = REWARD_WIN;
 
