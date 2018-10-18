@@ -62,7 +62,7 @@
 // Define Collision Parameters
 #define COLLISION_FILTER "ground_plane::link::collision"
 #define COLLISION_ITEM   "tube::tube_link::tube_collision"
-#define COLLISION_POINT  "arm::gripper_middle::gripper_collision"
+#define COLLISION_POINT  "arm::gripperbase::gripper_link" // check this is right?
 
 // Animation Steps
 #define ANIMATION_STEPS 1000
@@ -269,7 +269,7 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
 		/
 		*/
 		
-		if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_POINT) == 0)) // changed collision_point from Collision_filter
+		if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0)) // changed collision_point from Collision_filter
 		{
 			rewardHistory = REWARD_WIN;
 
@@ -278,11 +278,11 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
 
 			return;
 		}
-		else{
-          //Giving penalty for non correct collisions
-          rewardHistory = REWARD_LOSS;
-          newReward = true;
-          endEpisode = true;
+		else {
+          		//Giving penalty for non correct collisions
+          		rewardHistory = REWARD_LOSS;
+          		newReward = true;
+          		endEpisode = true;
         }
 		
 	}
